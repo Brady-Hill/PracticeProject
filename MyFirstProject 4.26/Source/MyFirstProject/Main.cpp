@@ -2,6 +2,7 @@
 
 
 #include "Main.h"
+#include "Weapon.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -57,6 +58,7 @@ AMain::AMain()
 	SprintingSpeed = 950.f;
 
 	bShiftKeyDown = false;
+	bLMBDown = false;
 
 	//Initialize Enums
 	MovementStatus = EMovementStatus::EMS_NORMAL;
@@ -179,6 +181,9 @@ void AMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AMain::ShiftKeyDown);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AMain::ShiftKeyUp);
 
+	PlayerInputComponent->BindAction("LMB", IE_Pressed, this, &AMain::LMBDown);
+	PlayerInputComponent->BindAction("LMB", IE_Released, this, &AMain::LMBUp);
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMain::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMain::MoveRight);
 
@@ -220,6 +225,23 @@ void AMain::TurnAtRate(float Rate)
 void AMain::LookUpAtRate(float Rate)
 {
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+}
+void AMain::LMBDown()
+{
+	bLMBDown = true;
+	if (ActiveOverlappingItem)
+	{
+		AWeapon* Weapon = Cast<AWeapon>(ActiveOverlappingItem);
+		if (Weapon)
+		{
+			Weapon->Equip(this);
+			SetActiveOverlappingItem(nullptr);
+		}
+	}
+}
+void AMain::LMBUp()
+{
+	bLMBDown = false;
 }
 void AMain::DecrementHealth(float Amount)
 {
@@ -271,4 +293,13 @@ void AMain::ShowPickupLocations()
 	{
 		UKismetSystemLibrary::DrawDebugSphere(this, Location, 25.f, 8, FLinearColor::Green, 10.f, 0.5f);
 	}
+}
+void AMain::SetEquippedWeapon(AWeapon* WeaponToSet)
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Destroy();
+	}
+
+	EquippedWeapon = WeaponToSet;
 }
